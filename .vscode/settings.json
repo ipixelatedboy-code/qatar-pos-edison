@@ -1,0 +1,6 @@
+{
+  "appService.zipIgnorePattern": ["node_modules{,/**}", ".vscode{,/**}"],
+  "appService.defaultWebAppToDeploy": "/subscriptions/6ad950ea-182a-44e0-9f13-6d8aad470e2e/resourceGroups/EdisonPOSQatar/providers/Microsoft.Web/sites/qatar-pos-edison",
+  "appService.deploySubpath": "dist",
+  "appService.showBuildDuringDeployPrompt": false
+}
