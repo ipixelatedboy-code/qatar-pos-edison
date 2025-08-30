@@ -21,7 +21,7 @@ export default function CashPaymentScreen() {
       );
       return;
     }
-    const newTxnData = {
+    await recordTxn({
       student_id: null,
       items: cart,
       subtotal: cartTotal,
@@ -30,9 +30,9 @@ export default function CashPaymentScreen() {
       change_due: change,
       amount_deducted: 0,
       outstanding_after: 0,
-    };
-    const newTxn = await recordTxn(newTxnData);
-    navigate("/receipt", { replace: true, state: { transaction: newTxn } });
+    });
+    window.alert("Payment Complete: Transaction recorded successfully.");
+    navigate("/pos", { replace: true });
   };
 
   const handleKeypad = (val) => {
