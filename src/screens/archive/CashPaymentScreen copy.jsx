@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useStore } from "../state/Store";
+import { useStore } from "../../state/Store";
 
 export default function CashPaymentScreen() {
   const { cart, cartTotal, recordTxn, CURRENCY } = useStore();
