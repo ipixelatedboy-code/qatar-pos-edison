@@ -32,7 +32,7 @@ export default function ScanCardScreen() {
   const {
     cartTotal,
     findStudentByCard,
-    // updateStudentBalance has been removed
+    updateStudentBalance,
     recordTxn,
     CURRENCY,
     cart,
@@ -58,26 +58,24 @@ export default function ScanCardScreen() {
     }
   };
 
-  // --- MODIFIED FUNCTION ---
   const charge = async () => {
     if (!student) return;
-    const { balance, outstanding = 0, id, name } = student;
+    const { balance, outstanding = 0, id } = student;
     let amountDeducted = 0;
     let outstandingAfter = outstanding;
 
     if (balance >= cartTotal) {
       amountDeducted = cartTotal;
-      // NOTE: updateStudentBalance call removed
+      await updateStudentBalance(id, -cartTotal, 0);
     } else {
       amountDeducted = balance;
       const remainder = cartTotal - balance;
+      await updateStudentBalance(id, -balance, remainder);
       outstandingAfter += remainder;
-      // NOTE: updateStudentBalance call removed
     }
 
     await recordTxn({
       student_id: id,
-      student_name: name, // Pass student name directly
       items: cart,
       subtotal: cartTotal,
       payment_method: "CARD",
