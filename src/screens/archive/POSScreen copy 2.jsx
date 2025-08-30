@@ -1,9 +1,9 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { useStore } from "../state/Store";
-import ProductGrid from "../components/ProductGrid";
-import Cart from "../components/Cart";
-import Toast from "../components/Toast";
+import { useStore } from "../../state/Store";
+import ProductGrid from "../../components/ProductGrid";
+import Cart from "../../components/Cart";
+import Toast from "../../components/Toast";
 
 export default function POSScreen() {
   const {
@@ -119,8 +119,11 @@ export default function POSScreen() {
           ))}
         </div>
         <div style={styles.headerActions}>
-          <button onClick={() => navigate('/history')} style={{...styles.headerBtn, backgroundColor: '#64748B'}}>
-              History
+          <button
+            onClick={() => navigate("/history")}
+            style={{ ...styles.headerBtn, backgroundColor: "#64748B" }}
+          >
+            History
           </button>
           <button
             onClick={() => {

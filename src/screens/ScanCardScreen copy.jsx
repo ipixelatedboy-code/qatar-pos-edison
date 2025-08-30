@@ -63,21 +63,18 @@ export default function ScanCardScreen() {
     const { balance, outstanding = 0, id } = student;
     let amountDeducted = 0;
     let outstandingAfter = outstanding;
-    let newBalance = balance;
 
     if (balance >= cartTotal) {
       amountDeducted = cartTotal;
       await updateStudentBalance(id, -cartTotal, 0);
-      newBalance = balance - cartTotal;
     } else {
       amountDeducted = balance;
       const remainder = cartTotal - balance;
       await updateStudentBalance(id, -balance, remainder);
       outstandingAfter += remainder;
-      newBalance = 0;
     }
 
-    const newTxnData = {
+    await recordTxn({
       student_id: id,
       items: cart,
       subtotal: cartTotal,
@@ -86,12 +83,17 @@ export default function ScanCardScreen() {
       change_due: 0,
       amount_deducted: amountDeducted,
       outstanding_after: outstandingAfter,
-      new_balance: newBalance,
-    };
+    });
 
-    const newTxn = await recordTxn(newTxnData);
-
-    navigate("/receipt", { replace: true, state: { transaction: newTxn } });
+    window.alert(
+      `Charge Successful: Charged ${CURRENCY}${amountDeducted.toFixed(2)} to ${
+        student.name
+      }.` +
+        (amountDeducted < cartTotal
+          ? "\nOutstanding balance has been updated."
+          : "")
+    );
+    navigate("/pos", { replace: true });
   };
 
   return (
