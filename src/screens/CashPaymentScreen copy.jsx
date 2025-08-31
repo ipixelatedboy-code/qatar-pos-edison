@@ -21,8 +21,7 @@ export default function CashPaymentScreen() {
       );
       return;
     }
-
-    const newTxn = await recordTxn({
+    await recordTxn({
       student_id: null,
       items: cart,
       subtotal: cartTotal,
@@ -32,8 +31,8 @@ export default function CashPaymentScreen() {
       amount_deducted: 0,
       outstanding_after: 0,
     });
-
-    navigate("/receipt", { state: { transaction: newTxn } });
+    window.alert("Payment Complete: Transaction recorded successfully.");
+    navigate("/pos", { replace: true });
   };
 
   const handleKeypad = (val) => {
@@ -52,7 +51,6 @@ export default function CashPaymentScreen() {
         <button onClick={() => navigate("/pos")} style={styles.backBtn}>
           ← Back
         </button>
-
         <div style={styles.cashInputContainer}>
           <div style={styles.labelLeft}>Cash Received</div>
           <input
@@ -63,7 +61,6 @@ export default function CashPaymentScreen() {
             readOnly
           />
         </div>
-
         <div style={styles.keypad}>
           {[
             ["1", "2", "3"],
@@ -86,21 +83,20 @@ export default function CashPaymentScreen() {
             </div>
           ))}
         </div>
-
         <button onClick={complete} style={styles.completeBtn}>
           Complete Payment
         </button>
       </div>
-
       <div style={styles.rightPanel}>
         <div style={styles.totalLabel}>Amount Due</div>
         <div style={styles.totalAmount}>
-          {CURRENCY} {cartTotal.toFixed(2)}
+          {CURRENCY}
+          {cartTotal.toFixed(2)}
         </div>
-
         <div style={styles.label}>Change Due</div>
         <div style={styles.change}>
-          {CURRENCY} {change.toFixed(2)}
+          {CURRENCY}
+          {change.toFixed(2)}
         </div>
       </div>
     </div>
@@ -123,6 +119,9 @@ const styles = {
     padding: "32px 24px",
     display: "flex",
     flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "stretch",
+    boxSizing: "border-box",
   },
   rightPanel: {
     flex: 1,
@@ -132,56 +131,50 @@ const styles = {
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
-    padding: 40,
+    padding: 32,
     borderLeft: "1px solid #E2E8F0",
     boxSizing: "border-box",
   },
-  backBtn: {
-    alignSelf: "flex-start",
-    marginBottom: 24,
-    background: "#F3F4F6",
-    border: "none",
-    color: "#3B82F6",
-    fontWeight: "bold",
-    fontSize: 18,
-    cursor: "pointer",
-    padding: "8px 20px",
-    borderRadius: 12,
-    boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-    transition: "background 0.2s",
-  },
-  cashInputContainer: {
-    position: "relative",
-    width: "100%",
-    marginBottom: 24,
-  },
-  labelLeft: {
-    position: "absolute",
-    left: 18,
-    top: -12,
-    backgroundColor: "#F0F4F8",
-    padding: "0 4px",
-    fontSize: 16,
+  totalLabel: {
+    fontSize: 20,
     color: "#64748B",
+    marginBottom: 8,
+    textAlign: "center",
   },
-  input: {
-    width: "100%",
-    border: "1px solid #CBD5E1",
-    borderRadius: 12,
-    padding: "16px 18px",
-    fontSize: 24,
-    backgroundColor: "#FFFFFF",
-    color: "#1E293B",
-  },
-  totalLabel: { fontSize: 24, color: "#64748B", marginBottom: 8 },
   totalAmount: {
     fontSize: 45,
     fontWeight: "bold",
     color: "#1E293B",
-    marginBottom: 32,
+    marginBottom: 24,
+    textAlign: "center",
   },
   label: {
     fontSize: 18,
+    color: "#64748B",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  labelLeft: {
+    fontSize: 18,
+    color: "#64748B",
+    marginBottom: 8,
+    textAlign: "left",
+    width: "100%",
+  },
+  cashInputContainer: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    border: "1px solid #E2E8F0",
+    alignItems: "stretch",
+    width: "100%",
+    display: "flex",
+    flexDirection: "column",
+    boxSizing: "border-box",
+  },
+  input: {
+    fontSize: 32,
     fontWeight: 600,
     color: "#1E293B",
     textAlign: "center",
@@ -227,13 +220,29 @@ const styles = {
   keypadTxt: { fontSize: 22, fontWeight: 600, color: "#1E293B" },
   completeBtn: {
     backgroundColor: "#10B981",
-    padding: "16px 0",
-    borderRadius: 16,
+    padding: "16px",
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 16,
     width: "100%",
     color: "#FFFFFF",
     fontWeight: "bold",
-    fontSize: 22,
+    fontSize: 18,
     border: "none",
     cursor: "pointer",
+  },
+  backBtn: {
+    alignSelf: "flex-start",
+    marginBottom: 24,
+    background: "#F3F4F6",
+    border: "none",
+    color: "#3B82F6",
+    fontWeight: "bold",
+    fontSize: 18,
+    cursor: "pointer",
+    padding: "8px 20px",
+    borderRadius: 12,
+    boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+    transition: "background 0.2s",
   },
 };

@@ -8,8 +8,8 @@ import React, {
 
 const StoreContext = createContext(null);
 
-const API_BASE = "https://edison-qr.eagletechsolutions.co.uk/api";
-const CURRENCY = "£";
+const API_BASE = import.meta.env.VITE_API_BASE || "/api";
+const CURRENCY = "QR";
 const CACHE_KEY = "pos_cache_data";
 const CACHE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -46,34 +46,31 @@ export function StoreProvider({ children }) {
     }
 
     try {
-      const res = await fetch(
-        `${API_BASE}/CategoriesApi/branch-categories-products/${branch}`
-      );
-      if(!res.ok) throw new Error("Failed to fetch products for this branch.");
-      
-      const catsWithProds = await res.json();
-      
-      if (!Array.isArray(catsWithProds)) {
-          throw new Error("API response was not in the expected format.");
-      }
+      const res = await fetch(`${API_BASE}/CategoriesApi`);
+      const cats = await res.json();
 
-      const formattedCategories = catsWithProds.map((c) => ({
-        id: c.categoryId,
-        name: c.categoryName,
-      }));
+      const formattedCategories = cats
+        .map((c) => ({ id: c.id, name: c.categoryName }))
+        .filter((c) => c.name.toLowerCase() !== "all");
 
-      const allProducts = catsWithProds.flatMap(
-        (c) =>
-          c.products?.map((p) => ({
+      let allProducts = [];
+      for (let c of cats) {
+        const pres = await fetch(
+          `${API_BASE}/CategoriesApi/products/${c.id}?branchId=${branch}`
+        );
+        const prods = await pres.json();
+        allProducts = [
+          ...allProducts,
+          ...prods.map((p) => ({
             id: p.id,
             name: p.name,
             price: p.unitPrice,
             category_id: p.categoryId,
-            description: p.description ?? "",
-            image: p.imageURL ?? "",
-            barcodes: p.barcodes || [],
-          })) || []
-      );
+            description: p.description,
+            image: p.imageURL,
+          })),
+        ];
+      }
 
       setProducts(allProducts);
       setCategories(formattedCategories);
@@ -92,8 +89,6 @@ export function StoreProvider({ children }) {
       }
     } catch (err) {
       console.error("Error loading data:", err);
-      setProducts([]);
-      setCategories([]);
     }
   }, []);
 
@@ -104,6 +99,7 @@ export function StoreProvider({ children }) {
 
   const addItemToCart = useCallback((item) => {
     const price = item.price ?? item.unitPrice ?? 0;
+    if (price === 0) return;
     setCart((prev) => {
       const existing = prev.find((i) => i.id === item.id);
       if (existing)
@@ -115,20 +111,12 @@ export function StoreProvider({ children }) {
   }, []);
 
   const incrementCartItem = useCallback(
-    (item) =>
-      setCart((prev) =>
-        prev.map((i) => (i.id === item.id ? { ...i, qty: i.qty + 1 } : i))
-      ),
+    (item) => setCart((prev) => prev.map((i) => (i.id === item.id ? { ...i, qty: i.qty + 1 } : i))),
     []
   );
 
   const decrementCartItem = useCallback(
-    (item) =>
-      setCart((prev) => {
-        const existing = prev.find(i => i.id === item.id);
-        if(existing && existing.qty <= 1) return prev.filter(i => i.id !== item.id);
-        return prev.map((i) => (i.id === item.id ? { ...i, qty: i.qty - 1 } : i))
-      }),
+    (item) => setCart((prev) => prev.map((i) => (i.id === item.id ? { ...i, qty: i.qty - 1 } : i))),
     []
   );
 
@@ -139,21 +127,15 @@ export function StoreProvider({ children }) {
 
   const clearCart = useCallback(() => setCart([]), []);
 
-  const login = useCallback((employeeId, pin) => {
-    // The real auth is the API call in LoginScreen.
-    // This just sets the staff member in the state.
-    setStaff({ id: employeeId, name: `Staff #${employeeId}` });
-    return Promise.resolve(true);
+  const login = useCallback((pin) => {
+    if (pin === "1313") {
+      setStaff({ id: 1, name: "Ahmed" });
+      return Promise.resolve(true);
+    }
+    return Promise.resolve(false);
   }, []);
 
-  const logout = useCallback(() => {
-      setStaff(null)
-      setBranchId(null)
-      setBranchName(null)
-      setCart([])
-      setProducts([])
-      setCategories([])
-    }, []);
+  const logout = useCallback(() => setStaff(null), []);
 
   const findStudentByCard = useCallback(async (cardId) => {
     try {

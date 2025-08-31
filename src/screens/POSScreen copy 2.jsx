@@ -30,14 +30,10 @@ export default function POSScreen() {
 
   useEffect(() => {
     if (branchId) refreshData(branchId);
-    else navigate("/login", { replace: true }); // If no branchId, redirect to login
-  }, [branchId, refreshData, navigate]);
+  }, [branchId, refreshData]);
 
   useEffect(() => {
-    // Automatically select the first category when categories load or change
-    if (categories.length > 0 && !selectedCat) {
-      setSelectedCat(categories[0].id);
-    }
+    if (!selectedCat && categories.length > 0) setSelectedCat(categories[0].id);
   }, [categories, selectedCat]);
 
   useEffect(() => {
@@ -51,7 +47,7 @@ export default function POSScreen() {
   const filteredProducts = useMemo(
     () =>
       products
-        .filter((p) => (selectedCat ? p.category_id === selectedCat : true))
+        .filter((p) => (selectedCat ? p.category_id === selectedCat : false))
         .slice()
         .sort((a, b) => a.name.localeCompare(b.name)),
     [products, selectedCat]

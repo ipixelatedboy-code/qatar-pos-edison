@@ -8,8 +8,8 @@ import React, {
 
 const StoreContext = createContext(null);
 
-const API_BASE = "https://edison-qr.eagletechsolutions.co.uk/api";
-const CURRENCY = "£";
+const API_BASE = import.meta.env.VITE_API_BASE || "/api";
+const CURRENCY = "QR";
 const CACHE_KEY = "pos_cache_data";
 const CACHE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -47,24 +47,21 @@ export function StoreProvider({ children }) {
 
     try {
       const res = await fetch(
-        `${API_BASE}/CategoriesApi/branch-categories-products/${branch}`
+        `${API_BASE}/CategoriesApi/user-categories-products?employeeId=${branch}&pin=${branch}`
       );
-      if(!res.ok) throw new Error("Failed to fetch products for this branch.");
-      
-      const catsWithProds = await res.json();
-      
-      if (!Array.isArray(catsWithProds)) {
-          throw new Error("API response was not in the expected format.");
-      }
+      const cats = await res.json();
 
-      const formattedCategories = catsWithProds.map((c) => ({
+      const formattedCategories = cats.map((c) => ({
         id: c.categoryId,
         name: c.categoryName,
       }));
 
-      const allProducts = catsWithProds.flatMap(
-        (c) =>
-          c.products?.map((p) => ({
+      let allProducts = [];
+      for (let c of cats) {
+        const prods = c.products || [];
+        allProducts = [
+          ...allProducts,
+          ...prods.map((p) => ({
             id: p.id,
             name: p.name,
             price: p.unitPrice,
@@ -72,8 +69,9 @@ export function StoreProvider({ children }) {
             description: p.description ?? "",
             image: p.imageURL ?? "",
             barcodes: p.barcodes || [],
-          })) || []
-      );
+          })),
+        ];
+      }
 
       setProducts(allProducts);
       setCategories(formattedCategories);
@@ -92,8 +90,6 @@ export function StoreProvider({ children }) {
       }
     } catch (err) {
       console.error("Error loading data:", err);
-      setProducts([]);
-      setCategories([]);
     }
   }, []);
 
@@ -104,6 +100,7 @@ export function StoreProvider({ children }) {
 
   const addItemToCart = useCallback((item) => {
     const price = item.price ?? item.unitPrice ?? 0;
+    if (price === 0) return;
     setCart((prev) => {
       const existing = prev.find((i) => i.id === item.id);
       if (existing)
@@ -124,11 +121,9 @@ export function StoreProvider({ children }) {
 
   const decrementCartItem = useCallback(
     (item) =>
-      setCart((prev) => {
-        const existing = prev.find(i => i.id === item.id);
-        if(existing && existing.qty <= 1) return prev.filter(i => i.id !== item.id);
-        return prev.map((i) => (i.id === item.id ? { ...i, qty: i.qty - 1 } : i))
-      }),
+      setCart((prev) =>
+        prev.map((i) => (i.id === item.id ? { ...i, qty: i.qty - 1 } : i))
+      ),
     []
   );
 
@@ -139,21 +134,15 @@ export function StoreProvider({ children }) {
 
   const clearCart = useCallback(() => setCart([]), []);
 
-  const login = useCallback((employeeId, pin) => {
-    // The real auth is the API call in LoginScreen.
-    // This just sets the staff member in the state.
-    setStaff({ id: employeeId, name: `Staff #${employeeId}` });
-    return Promise.resolve(true);
+  const login = useCallback((pin) => {
+    if (pin === "1313") {
+      setStaff({ id: 1, name: "Ahmed" });
+      return Promise.resolve(true);
+    }
+    return Promise.resolve(false);
   }, []);
 
-  const logout = useCallback(() => {
-      setStaff(null)
-      setBranchId(null)
-      setBranchName(null)
-      setCart([])
-      setProducts([])
-      setCategories([])
-    }, []);
+  const logout = useCallback(() => setStaff(null), []);
 
   const findStudentByCard = useCallback(async (cardId) => {
     try {

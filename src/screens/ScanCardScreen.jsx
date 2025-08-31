@@ -1,3 +1,5 @@
+// ScanCardScreen.jsx
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStore } from "../state/Store";
@@ -29,24 +31,38 @@ const VirtualKeyboard = ({ onKeyPress }) => {
 };
 
 export default function ScanCardScreen() {
-  const {
-    cartTotal,
-    findStudentByCard,
-    // updateStudentBalance has been removed
-    recordTxn,
-    CURRENCY,
-    cart,
-  } = useStore();
+  const { cartTotal, recordTxn, CURRENCY, cart } = useStore();
   const [cardId, setCardId] = useState("");
   const [student, setStudent] = useState(null);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const navigate = useNavigate();
 
+  const API_BASE = import.meta.env.VITE_API_BASE || "/api";
+
+  // ✅ fixed: use working endpoint to fetch student balance
   const lookup = async (id) => {
-    const s = await findStudentByCard((id || "").trim());
-    setStudent(s);
-    if (!s) {
-      window.alert("Not Found: No student associated with that Card ID.");
+    if (!id) return;
+    try {
+      const res = await fetch(
+        `https://edison-qr.eagletechsolutions.co.uk/api/CategoriesApi/student-balance/${id}`
+      );
+      if (!res.ok) {
+        setStudent(null);
+        window.alert("Not Found: No student associated with that Card ID.");
+        return;
+      }
+      const balance = await res.json();
+      setStudent({
+        id,
+        card_id: id,
+        name: `Student ${id}`,
+        balance: parseFloat(balance),
+        outstanding: 0,
+      });
+    } catch (err) {
+      console.error("Lookup error:", err);
+      setStudent(null);
+      window.alert("Error looking up student.");
     }
   };
 
@@ -58,44 +74,46 @@ export default function ScanCardScreen() {
     }
   };
 
-  // --- MODIFIED FUNCTION ---
   const charge = async () => {
     if (!student) return;
-    const { balance, outstanding = 0, id, name } = student;
-    let amountDeducted = 0;
-    let outstandingAfter = outstanding;
+    const { id, name } = student;
 
-    if (balance >= cartTotal) {
-      amountDeducted = cartTotal;
-      // NOTE: updateStudentBalance call removed
-    } else {
-      amountDeducted = balance;
-      const remainder = cartTotal - balance;
-      outstandingAfter += remainder;
-      // NOTE: updateStudentBalance call removed
+    try {
+      const res = await fetch(
+        `${API_BASE}/CategoriesApi/student-transactions`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            barcodeValue: id,
+            amount: cartTotal,
+            note: "POS purchase",
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to charge student card.");
+      }
+
+      const newTxn = await recordTxn({
+        student_id: id,
+        student_name: name,
+        items: cart,
+        subtotal: cartTotal,
+        payment_method: "CARD",
+        cash_given: 0,
+        change_due: 0,
+        amount_deducted: cartTotal,
+        outstanding_after: 0,
+      });
+
+      // ✅ Always go to receipt like cash
+      navigate("/receipt", { state: { transaction: newTxn } });
+    } catch (error) {
+      console.error("Error during card charge:", error);
+      window.alert("Charge Failed: " + error.message);
     }
-
-    await recordTxn({
-      student_id: id,
-      student_name: name, // Pass student name directly
-      items: cart,
-      subtotal: cartTotal,
-      payment_method: "CARD",
-      cash_given: 0,
-      change_due: 0,
-      amount_deducted: amountDeducted,
-      outstanding_after: outstandingAfter,
-    });
-
-    window.alert(
-      `Charge Successful: Charged ${CURRENCY}${amountDeducted.toFixed(2)} to ${
-        student.name
-      }.` +
-        (amountDeducted < cartTotal
-          ? "\nOutstanding balance has been updated."
-          : "")
-    );
-    navigate("/pos", { replace: true });
   };
 
   return (
@@ -142,6 +160,15 @@ export default function ScanCardScreen() {
                 </div>
               </div>
               <div style={styles.detailRow}>
+                <div style={styles.detailLabel}>Balance After Purchase:</div>
+                <div style={styles.detailValue}>
+                  {CURRENCY}
+                  {Number(student.balance).toFixed(2) - cartTotal >= 0
+                    ? (Number(student.balance) - cartTotal).toFixed(2)
+                    : "0.00"}
+                </div>
+              </div>
+              <div style={styles.detailRow}>
                 <div style={styles.detailLabel}>Outstanding Debt:</div>
                 <div style={{ ...styles.detailValue, color: "#EF4444" }}>
                   {CURRENCY}
@@ -153,7 +180,7 @@ export default function ScanCardScreen() {
         </div>
       </div>
       <div style={styles.rightPanel}>
-        <div style={styles.totalLabel}>Amount Due</div>
+        <div style={styles.totalLabel}>Transaction Amount</div>
         <div style={styles.totalAmount}>
           {CURRENCY}
           {cartTotal.toFixed(2)}

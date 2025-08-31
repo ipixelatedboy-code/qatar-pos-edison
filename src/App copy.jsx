@@ -6,7 +6,6 @@ import POSScreen from "./screens/POSScreen";
 import ScanCardScreen from "./screens/ScanCardScreen";
 import CashPaymentScreen from "./screens/CashPaymentScreen";
 import HistoryScreen from "./screens/HistoryScreen";
-import Receipt from "./screens/Receipt";
 
 export default function App() {
   return (
@@ -19,7 +18,6 @@ export default function App() {
           <Route path="/scan-card" element={<ScanCardScreen />} />
           <Route path="/cash" element={<CashPaymentScreen />} />
           <Route path="/history" element={<HistoryScreen />} />
-          <Route path="/receipt" element={<Receipt />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
