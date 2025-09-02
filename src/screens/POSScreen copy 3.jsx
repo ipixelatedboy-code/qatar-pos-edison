@@ -24,18 +24,17 @@ export default function POSScreen() {
 
   const [selectedCat, setSelectedCat] = useState(null);
   const [scanBuffer, setScanBuffer] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isSearching, setIsSearching] = useState(false); // ✅ prevent focus stealing
   const inputRef = useRef(null);
   const [toast, setToast] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
     if (branchId) refreshData(branchId);
-    else navigate("/login", { replace: true });
+    else navigate("/login", { replace: true }); // If no branchId, redirect to login
   }, [branchId, refreshData, navigate]);
 
   useEffect(() => {
+    // Automatically select the first category when categories load or change
     if (categories.length > 0 && !selectedCat) {
       setSelectedCat(categories[0].id);
     }
@@ -43,32 +42,20 @@ export default function POSScreen() {
 
   useEffect(() => {
     const focusInputInterval = setInterval(() => {
-      if (
-        !isSearching && // ✅ only focus hidden input if not typing in search
-        inputRef.current &&
-        document.activeElement !== inputRef.current
-      ) {
+      if (inputRef.current && document.activeElement !== inputRef.current)
         inputRef.current.focus();
-      }
     }, 1000);
     return () => clearInterval(focusInputInterval);
-  }, [isSearching]);
+  }, []);
 
-  const filteredProducts = useMemo(() => {
-    let list = products;
-    if (selectedCat) list = list.filter((p) => p.category_id === selectedCat);
-
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
-      list = list.filter(
-        (p) =>
-          p.name.toLowerCase().includes(term) ||
-          (p.barcodes && p.barcodes.some((b) => b.toLowerCase().includes(term)))
-      );
-    }
-
-    return list.slice().sort((a, b) => a.name.localeCompare(b.name));
-  }, [products, selectedCat, searchTerm]);
+  const filteredProducts = useMemo(
+    () =>
+      products
+        .filter((p) => (selectedCat ? p.category_id === selectedCat : true))
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [products, selectedCat]
+  );
 
   const processScan = async (code) => {
     if (!code) return;
@@ -94,7 +81,21 @@ export default function POSScreen() {
         Branch: {branchName} ({branchId})
       </div>
 
-      {/* Header row with categories + search + actions */}
+      <input
+        ref={inputRef}
+        value={scanBuffer}
+        onChange={(e) => setScanBuffer(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            const code = (e.currentTarget.value || "").trim();
+            if (code) processScan(code);
+            setScanBuffer("");
+          }
+        }}
+        style={styles.hiddenInput}
+        autoFocus
+      />
+
       <div style={styles.header}>
         <div style={styles.tabsScroll}>
           {categories.map((c) => (
@@ -117,18 +118,6 @@ export default function POSScreen() {
             </button>
           ))}
         </div>
-
-        {/* 🔍 Compact Search Bar */}
-        <input
-          type="text"
-          value={searchTerm}
-          placeholder="Search..."
-          onFocus={() => setIsSearching(true)}
-          onBlur={() => setIsSearching(false)}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={styles.searchInput}
-        />
-
         <div style={styles.headerActions}>
           <button
             onClick={() => navigate("/history")}
@@ -147,22 +136,6 @@ export default function POSScreen() {
           </button>
         </div>
       </div>
-
-      {/* Hidden input (for physical barcode scanner) */}
-      <input
-        ref={inputRef}
-        value={scanBuffer}
-        onChange={(e) => setScanBuffer(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            const code = (e.currentTarget.value || "").trim();
-            if (code) processScan(code);
-            setScanBuffer("");
-          }
-        }}
-        style={styles.hiddenInput}
-        autoFocus
-      />
 
       <div style={styles.content}>
         <div style={styles.productsPanel}>
@@ -238,15 +211,8 @@ const styles = {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 16,
-    gap: 10,
   },
-  tabsScroll: {
-    display: "flex",
-    overflowX: "auto",
-    gap: 10,
-    paddingBottom: 4,
-    flex: 1,
-  },
+  tabsScroll: { display: "flex", overflowX: "auto", gap: 10, paddingBottom: 4 },
   tab: {
     padding: "12px 20px",
     borderRadius: 16,
@@ -259,17 +225,10 @@ const styles = {
   tabActive: { backgroundColor: "#3B82F6", borderColor: "#3B82F6" },
   tabText: { color: "#334155", fontWeight: "bold", fontSize: 16 },
   tabTextActive: { color: "#FFFFFF" },
-  searchInput: {
-    padding: "8px 12px",
-    fontSize: 14,
-    borderRadius: 12,
-    border: "1px solid #CBD5E1",
-    outline: "none",
-    minWidth: 200,
-  },
   headerActions: {
     display: "flex",
     flexDirection: "row",
+    marginLeft: "auto",
     gap: 10,
   },
   headerBtn: {

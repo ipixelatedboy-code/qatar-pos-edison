@@ -74,11 +74,105 @@ export default function ScanCardScreen() {
     }
   };
 
+  // const charge = async () => {
+  //   if (!student) return;
+  //   const { id, name } = student;
+
+  //   try {
+  //     const res = await fetch(
+  //       `${API_BASE}/CategoriesApi/student-transactions`,
+  //       {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({
+  //           barcodeValue: id,
+  //           amount: cartTotal,
+  //           note: "POS purchase",
+  //         }),
+  //       }
+  //     );
+
+  //     if (!res.ok) {
+  //       throw new Error("Failed to charge student card.");
+  //     }
+
+  //     const newTxn = await recordTxn({
+  //       student_id: id,
+  //       student_name: name,
+  //       items: cart,
+  //       subtotal: cartTotal,
+  //       payment_method: "CARD",
+  //       cash_given: 0,
+  //       change_due: 0,
+  //       amount_deducted: cartTotal,
+  //       outstanding_after: 0,
+  //     });
+
+  //     // ✅ Always go to receipt like cash
+  //     navigate("/receipt", { state: { transaction: newTxn } });
+  //   } catch (error) {
+  //     console.error("Error during card charge:", error);
+  //     window.alert("Charge Failed: " + error.message);
+  //   }
+  // };
+  // const charge = async () => {
+  //   if (!student) return;
+  //   const { id, name } = student;
+
+  //   try {
+  //     const res = await fetch(
+  //       `${API_BASE}/CategoriesApi/student-transactions`,
+  //       {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({
+  //           barcodeValue: id,
+  //           amount: cartTotal,
+  //           note: "Canteen snacks", // updated note // not not takinig ni the items from cart
+  //           lines: cart.map((item) => ({
+  //             productId: item.id,
+  //             quantity: item.qty,
+  //           })),
+  //         }),
+  //       }
+  //     );
+
+  //     if (!res.ok) {
+  //       throw new Error("Failed to charge student card.");
+  //     }
+
+  //     const newTxn = await recordTxn({
+  //       student_id: id,
+  //       student_name: name,
+  //       items: cart,
+  //       subtotal: cartTotal,
+  //       payment_method: "CARD",
+  //       cash_given: 0,
+  //       change_due: 0,
+  //       amount_deducted: cartTotal,
+  //       outstanding_after: 0,
+  //     });
+
+  //     // ✅ Always go to receipt like cash
+  //     navigate("/receipt", { state: { transaction: newTxn } });
+  //   } catch (error) {
+  //     console.error("Error during card charge:", error);
+  //     window.alert("Charge Failed: " + error.message);
+  //   }
+  // };
+
   const charge = async () => {
     if (!student) return;
     const { id, name } = student;
 
     try {
+      const noteDetails = cart
+        .map(
+          (item) =>
+            `${item.name} x${item.qty} @ ${CURRENCY}${item.price.toFixed(2)}`
+        )
+        .join("\n"); // ✅ line breaks for readability
+
       const res = await fetch(
         `${API_BASE}/CategoriesApi/student-transactions`,
         {
@@ -87,7 +181,12 @@ export default function ScanCardScreen() {
           body: JSON.stringify({
             barcodeValue: id,
             amount: cartTotal,
-            note: "POS purchase",
+            note: `Canteen snacks:\n${noteDetails}`, // ✅ neat multi-line note
+            lines: cart.map((item) => ({
+              productId: item.id,
+              quantity: item.qty,
+              price: item.price,
+            })),
           }),
         }
       );
@@ -108,7 +207,6 @@ export default function ScanCardScreen() {
         outstanding_after: 0,
       });
 
-      // ✅ Always go to receipt like cash
       navigate("/receipt", { state: { transaction: newTxn } });
     } catch (error) {
       console.error("Error during card charge:", error);
