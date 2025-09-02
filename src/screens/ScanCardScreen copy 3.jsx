@@ -339,7 +339,9 @@ export default function ScanCardScreen() {
                   }}
                 >
                   {CURRENCY}
-                  {(Number(student.balance) - cartTotal).toFixed(2)}
+                  {Number(student.balance).toFixed(2) - cartTotal >= -10
+                    ? (Number(student.balance) - cartTotal).toFixed(2)
+                    : "Not Allowed"}
                 </div>
               </div>
             </div>
