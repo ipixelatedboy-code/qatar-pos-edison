@@ -28,22 +28,76 @@ export function StoreProvider({ children }) {
     return id;
   }, []);
 
+  // const loadData = useCallback(async (branch) => {
+  //   if (!branch) return;
+
+  //   try {
+  //     const cached = localStorage.getItem(`${CACHE_KEY}_${branch}`);
+  //     if (cached) {
+  //       const { timestamp, data } = JSON.parse(cached);
+  //       if (Date.now() - timestamp < CACHE_EXPIRY_MS) {
+  //         setCategories(data.categories);
+  //         setProducts(data.products);
+  //         return;
+  //       }
+  //     }
+  //   } catch (e) {
+  //     console.error("Could not read from cache.", e);
+  //   }
+
+  //   try {
+  //     const res = await fetch(
+  //       `${API_BASE}/CategoriesApi/branch-categories-products/${branch}`
+  //     );
+  //     if (!res.ok) throw new Error("Failed to fetch products for this branch.");
+
+  //     const catsWithProds = await res.json();
+
+  //     if (!Array.isArray(catsWithProds)) {
+  //       throw new Error("API response was not in the expected format.");
+  //     }
+
+  //     const formattedCategories = catsWithProds.map((c) => ({
+  //       id: c.categoryId,
+  //       name: c.categoryName,
+  //     }));
+
+  //     const allProducts = catsWithProds.flatMap(
+  //       (c) =>
+  //         c.products?.map((p) => ({
+  //           id: p.id,
+  //           name: p.name,
+  //           price: p.unitPrice,
+  //           category_id: p.categoryId,
+  //           description: p.description ?? "",
+  //           image: p.imageURL ?? "",
+  //           barcodes: p.barcodes || [],
+  //         })) || []
+  //     );
+
+  //     setProducts(allProducts);
+  //     setCategories(formattedCategories);
+
+  //     try {
+  //       const cacheData = {
+  //         timestamp: Date.now(),
+  //         data: { categories: formattedCategories, products: allProducts },
+  //       };
+  //       localStorage.setItem(
+  //         `${CACHE_KEY}_${branch}`,
+  //         JSON.stringify(cacheData)
+  //       );
+  //     } catch (e) {
+  //       console.error("Could not write to cache.", e);
+  //     }
+  //   } catch (err) {
+  //     console.error("Error loading data:", err);
+  //     setProducts([]);
+  //     setCategories([]);
+  //   }
+  // }, []);
   const loadData = useCallback(async (branch) => {
     if (!branch) return;
-
-    try {
-      const cached = localStorage.getItem(`${CACHE_KEY}_${branch}`);
-      if (cached) {
-        const { timestamp, data } = JSON.parse(cached);
-        if (Date.now() - timestamp < CACHE_EXPIRY_MS) {
-          setCategories(data.categories);
-          setProducts(data.products);
-          return;
-        }
-      }
-    } catch (e) {
-      console.error("Could not read from cache.", e);
-    }
 
     try {
       const res = await fetch(
@@ -52,18 +106,15 @@ export function StoreProvider({ children }) {
       if (!res.ok) throw new Error("Failed to fetch products for this branch.");
 
       const catsWithProds = await res.json();
-
       if (!Array.isArray(catsWithProds)) {
         throw new Error("API response was not in the expected format.");
       }
 
+      // ✅ Keep all categories (including All)
       const formattedCategories = catsWithProds.map((c) => ({
         id: c.categoryId,
         name: c.categoryName,
-      }));
-
-      const allProducts = catsWithProds.flatMap(
-        (c) =>
+        products:
           c.products?.map((p) => ({
             id: p.id,
             name: p.name,
@@ -72,24 +123,14 @@ export function StoreProvider({ children }) {
             description: p.description ?? "",
             image: p.imageURL ?? "",
             barcodes: p.barcodes || [],
-          })) || []
-      );
+          })) || [],
+      }));
 
-      setProducts(allProducts);
       setCategories(formattedCategories);
 
-      try {
-        const cacheData = {
-          timestamp: Date.now(),
-          data: { categories: formattedCategories, products: allProducts },
-        };
-        localStorage.setItem(
-          `${CACHE_KEY}_${branch}`,
-          JSON.stringify(cacheData)
-        );
-      } catch (e) {
-        console.error("Could not write to cache.", e);
-      }
+      // Flatten once for global search/barcode scan
+      const allProducts = formattedCategories.flatMap((c) => c.products);
+      setProducts(allProducts);
     } catch (err) {
       console.error("Error loading data:", err);
       setProducts([]);

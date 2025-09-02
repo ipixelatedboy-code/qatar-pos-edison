@@ -54,9 +54,26 @@ export default function POSScreen() {
     return () => clearInterval(focusInputInterval);
   }, [isSearching]);
 
+  // const filteredProducts = useMemo(() => {
+  //   let list = products;
+  //   if (selectedCat) list = list.filter((p) => p.category_id === selectedCat);
+
+  //   if (searchTerm.trim()) {
+  //     const term = searchTerm.toLowerCase();
+  //     list = list.filter(
+  //       (p) =>
+  //         p.name.toLowerCase().includes(term) ||
+  //         (p.barcodes && p.barcodes.some((b) => b.toLowerCase().includes(term)))
+  //     );
+  //   }
+
+  //   return list.slice().sort((a, b) => a.name.localeCompare(b.name));
+  // }, [products, selectedCat, searchTerm]);
   const filteredProducts = useMemo(() => {
-    let list = products;
-    if (selectedCat) list = list.filter((p) => p.category_id === selectedCat);
+    const cat = categories.find((c) => c.id === selectedCat);
+    if (!cat) return [];
+
+    let list = cat.products || [];
 
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
@@ -67,8 +84,8 @@ export default function POSScreen() {
       );
     }
 
-    return list.slice().sort((a, b) => a.name.localeCompare(b.name));
-  }, [products, selectedCat, searchTerm]);
+    return list; // 👈 keeps API order, no duplicates
+  }, [categories, selectedCat, searchTerm]);
 
   const processScan = async (code) => {
     if (!code) return;
