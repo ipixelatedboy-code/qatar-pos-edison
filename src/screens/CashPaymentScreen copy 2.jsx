@@ -7,8 +7,6 @@ export default function CashPaymentScreen() {
   const [cash, setCash] = useState("");
   const navigate = useNavigate();
 
-  const API_BASE = import.meta.env.VITE_API_BASE || "/api";
-
   const change = useMemo(() => {
     const num = parseFloat(cash);
     if (isNaN(num)) return 0;
@@ -24,58 +22,18 @@ export default function CashPaymentScreen() {
       return;
     }
 
-    try {
-      // Create a detailed note from cart items
-      const noteDetails = cart
-        .map(
-          (item) =>
-            `${item.name} x${item.qty} @ ${CURRENCY}${item.price.toFixed(2)}`
-        )
-        .join("\n");
+    const newTxn = await recordTxn({
+      student_id: null,
+      items: cart,
+      subtotal: cartTotal,
+      payment_method: "CASH",
+      cash_given: cashNum,
+      change_due: change,
+      amount_deducted: 0,
+      outstanding_after: 0,
+    });
 
-      // POST the transaction to the API for the hardcoded "cashcashcash" user
-      const apiRes = await fetch(
-        `${API_BASE}/CategoriesApi/student-transactions`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            barcodeValue: "cashcashcash", // ✅ Hardcoded ID for cash sales
-            amount: cartTotal,
-            note: `Cash Purchase:\n${noteDetails}`,
-            lines: cart.map((item) => ({
-              productId: item.id,
-              quantity: item.qty,
-              price: item.price,
-            })),
-          }),
-        }
-      );
-
-      if (!apiRes.ok) {
-        // If the API call fails, stop the process and show an error
-        throw new Error("Failed to record cash transaction on the server.");
-      }
-
-      // Record the transaction locally and proceed to receipt
-      const newTxn = await recordTxn({
-        student_id: "cashcashcash",
-        student_name: "Cash Sale",
-        items: cart,
-        subtotal: cartTotal,
-        payment_method: "CASH",
-        cash_given: cashNum,
-        change_due: change,
-        amount_deducted: cartTotal, // Amount deducted from the "cashcashcash" account
-        outstanding_after: 0,
-      });
-
-      // Navigate to the receipt screen
-      navigate("/receipt", { state: { transaction: newTxn } });
-    } catch (error) {
-      console.error("Error completing cash payment:", error);
-      window.alert("Payment Failed: " + error.message);
-    }
+    navigate("/receipt", { state: { transaction: newTxn } });
   };
 
   const handleKeypad = (val) => {
