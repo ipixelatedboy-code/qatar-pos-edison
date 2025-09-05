@@ -6,10 +6,10 @@ import { useStore } from "../state/Store";
 
 const VirtualKeyboard = ({ onKeyPress }) => {
   const keys = [
-    ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
-    ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
-    ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
-    ["Z", "X", "C", "V", "B", "N", "M", "DEL"],
+    ["1", "2", "3"],
+    ["4", "5", "6"],
+    ["7", "8", "9"],
+    ["0", "DEL"],
   ];
   return (
     <div style={styles.keypad}>
@@ -73,6 +73,14 @@ export default function ScanCardScreen() {
       setCardId((prev) => prev.slice(0, -1));
     } else {
       setCardId((prev) => prev + key);
+    }
+  };
+
+  const handlePinKeyPress = (key) => {
+    if (key === "DEL") {
+      setEnteredPin((prev) => prev.slice(0, -1));
+    } else {
+      setEnteredPin((prev) => prev + key);
     }
   };
 
@@ -177,7 +185,7 @@ export default function ScanCardScreen() {
           <div style={styles.title}>Scan or Enter Student Card</div>
           <div style={styles.inputContainer}>
             <input
-              placeholder="Card ID (e.g., S100)"
+              placeholder="Card ID"
               value={cardId}
               onChange={(e) => setCardId(e.target.value)}
               style={styles.input}
@@ -256,9 +264,10 @@ export default function ScanCardScreen() {
             <input
               type="password"
               value={enteredPin}
-              onChange={(e) => setEnteredPin(e.target.value)}
+              readOnly
               style={styles.input}
             />
+            <VirtualKeyboard onKeyPress={handlePinKeyPress} />
             <div style={styles.popupBtnRow}>
               <button onClick={handlePinSubmit} style={styles.popupBtnConfirm}>
                 Submit
