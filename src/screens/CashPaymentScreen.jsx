@@ -207,7 +207,7 @@ const styles = {
     color: "#64748B",
   },
   input: {
-    width: "100%",
+    width: "90%",
     border: "1px solid #CBD5E1",
     borderRadius: 12,
     padding: "16px 18px",
